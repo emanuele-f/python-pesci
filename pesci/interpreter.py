@@ -27,7 +27,8 @@ import operator
 import pesci.code
 import readline                 # enables line editing features
 from pesci.errors import *
-from pesci import ExecutionEnvironment, PesciCode
+from pesci.code import PesciCode, PesciFunction, PESCI_BUILTIN_FUNCTION
+from pesci import ExecutionEnvironment
 
 """
 Implements a python Abstract Syntax interpreter, which runs into a confined
@@ -52,29 +53,30 @@ is used to "wait" until sub-folded functions end their execution.
 operator_logical_or = lambda a,b: a or b
 operator_logical_and = lambda a,b: a and b
 
-# builtin functions
+# builtin functions and types
 BUILTINS = {'len':len, 'abs':abs, 'all':all, 'any':any, 'bin':bin, 'bool':bool,
  'cmp':cmp, 'complex':complex, 'dict':dict, 'enumerate':enumerate, 'filter':filter,
  'float':float, 'format':format, 'hasattr':hasattr, 'hash':hash, 'hex':hex, 'int':int,
  'list':list, 'long':long, 'map':map, 'max':max, 'min':min, 'oct':oct, 'ord':ord,
  'pow':pow, 'range':range, 'xrange':xrange, 'reduce':reduce, 'reversed':reversed,
  'round':round, 'slice':slice, 'sorted':sorted, 'str':str, 'sum':sum, 'type':type,
- 'tuple':tuple, 'zip':zip}
-
-# builtin types
-BUILT_TYPES = {'None':None}
+ 'tuple':tuple, 'zip':zip, 'None':None}
 
 class Interpreter(object):
     def __init__(self):
         self._interactive = False
 
     """Creates a new virtual execution environment """
-    def create_env(self, code=None):
+    def create_env(self, code=None, symbols={}):
         env = ExecutionEnvironment()
         if code:
-            env.setup(code.get_ast(), BUILTINS, BUILT_TYPES)
-        return env
+            env.setup(code.get_ast())
 
+        # Preload builtins
+        env.loadvars(BUILTINS)
+        # Preload names into environment
+        env.loadvars(symbols)
+        return env
 
     def _step_iterator(self, env):
         for node in ast.iter_child_nodes(env.code):
@@ -85,8 +87,8 @@ class Interpreter(object):
             try:
                 # a zombie value
                 val = env.pop()
-                if self._interactive:
-                    self.i_print(val)
+                if self._interactive and not val is None:
+                    self.print_line(val)
                 env.popall()
             except IndexError:
                 pass
@@ -155,14 +157,14 @@ class Interpreter(object):
                     # evaluate command
                     try:
                         code = PesciCode.from_string(cmd)
-                        env.setup(code.get_ast(), BUILTINS, BUILT_TYPES)
+                        env.setup(code.get_ast())
                         self.run(env)
                     except Exception as e:
                         traceback.print_exc(file=sys.stdout)
         self._interactive = False
 
     """Respond to a print instruction"""
-    def i_print(self, s):
+    def print_line(self, s):
         print s
 
     def _fold_expr(self, env, node):
@@ -214,7 +216,7 @@ class Interpreter(object):
         elif isinstance(node, ast.operator):
             return node
         elif isinstance(node, ast.Name):
-            return env.get_symbol(node.id)
+            return env.getvar(node.id)
         elif isinstance(node, ast.Pass):
             pass
         else:
@@ -408,7 +410,7 @@ class Interpreter(object):
             else:
                 s = str(s)
             v.append(s)
-        self.i_print("".join(v))
+        self.print_line("".join(v))
         yield node
 
     def _statement_if(self, env, node):
@@ -436,8 +438,8 @@ class Interpreter(object):
         # NB: default n values are mapped to the last n arguments
         default = [self._base_value(env, defaul) for defaul in node.args.defaults]
         all_args = {'args':tuple(args), 'vararg':node.args.vararg, 'kwarg':node.args.kwarg, 'defaults':default}
-        f = pesci.code.PesciFunction(node.name, all_args, node.body)
-        env.setfunc(f.name, f)
+        f = PesciFunction(node.name, all_args, node.body)
+        env.setvar(f.name, f)
         yield node
 
     def _statement_funcall(self, env, node):
@@ -476,13 +478,7 @@ class Interpreter(object):
 
         # get the function
         if isinstance(node.func, ast.Name):
-            try:
-                f = env.getfunc(node.func.id)
-            except EnvFuncNotFound as e:
-                try:
-                    f = env.get_builtin(node.func.id)
-                except KeyError:
-                    raise e
+            f = env.getvar(node.func.id)
         else:
             itr = self._fold_expr(env, node.func)
             while itr:
@@ -491,7 +487,15 @@ class Interpreter(object):
             f = env.pop()
 
         # handle builtins
-        if isinstance(f, types.BuiltinFunctionType):
+        if not isinstance(f, PesciFunction):
+            try:
+                getattr(f, PESCI_BUILTIN_FUNCTION)
+            except AttributeError:
+                pass
+            else:
+                # it's a decorated function, we pass interpreter and env
+                allargs.insert(0, self)
+                allargs.insert(1, env)
             env.push(f(*allargs, **kwargs))
             yield
             return

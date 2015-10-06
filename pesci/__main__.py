@@ -20,7 +20,15 @@
 #
 
 import sys
-from pesci import Interpreter, PesciCode
+from pesci import *
+
+@pesci_function
+def show_help(interpreter, env):
+    interpreter.print_line("No help available. You are alone.")
+
+preloaded_symbols = {
+    'help' : show_help,
+}
 
 if __name__ == "__main__":
     if len(sys.argv) > 2:
@@ -31,7 +39,7 @@ if __name__ == "__main__":
     interpreter = Interpreter()
     if len(sys.argv) == 1:
         # run in interactive mode
-        env = interpreter.create_env()
+        env = interpreter.create_env(symbols=preloaded_symbols)
         interpreter.run_interactive(env)
     else:
         # run from file

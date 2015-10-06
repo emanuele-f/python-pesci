@@ -39,20 +39,6 @@ class InterpretError(Exception):
         return "Runtime Error: %s " % self.cause
 
 ## Environment
-class EnvVarNotFound(Exception):
-    def __init__(self, env, vid):
-        self.env = env
-        self.vid = vid
-    def __str__(self):
-        return "Variable '%s' not found in environment %s" % (self.vid, self.env)
-
-class EnvFuncNotFound(Exception):
-    def __init__(self, env, vid):
-        self.env = env
-        self.vid = vid
-    def __str__(self):
-        return "Function '%s' not found in environment %s" % (self.vid, self.env)
-
 class EnvSymbolNotFound(Exception):
     def __init__(self, env, vid):
         self.env = env

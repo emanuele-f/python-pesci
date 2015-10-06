@@ -33,34 +33,32 @@ class ExecutionEnvironment:
         self._contexts = []
         self._stack = []
         self.iterator = None
-        self._builtins = {}
 
         # create global context
         self.push_context()
 
-    def setup(self, code, builtins={}, builtvars={}):
+    def setup(self, code):
         self.code = code
         self.ip = 0
         self.iterator = None
-        self._builtins = builtins
-        self._builtvars = builtvars
+
+    def setvar(self, vid, val):
+        if vid and vid[0] == "_":
+            raise EnvBadSymbolName(self, vid)
+        self._set_in_context(self._get_context(vid), vid, val)
 
     def getvar(self, vid):
+        # Try to get defined function or name
         try:
             var = self._get_from_contexts(vid)
         except KeyError:
-            raise EnvVarNotFound(self, vid)
+            raise EnvSymbolNotFound(self, vid)
         return var
 
-    """any symbol, function, name, ..."""
-    def get_symbol(self, sid):
-        try: return self.getvar(sid)
-        except EnvVarNotFound:
-            try: return self.getfunc(sid)
-            except EnvFuncNotFound:
-                try: return self.get_builtin(sid)
-                except KeyError:
-                    raise EnvSymbolNotFound(self, sid)
+    """set multiple k->v at one """
+    def loadvars(self, vdict):
+        for k,v in vdict.items():
+            self.setvar(k, v)
 
     def _set_in_context(self, context, key, val):
         context[key] = val
@@ -70,29 +68,7 @@ class ExecutionEnvironment:
         for context in reversed(self._contexts):
             if context.has_key(key):
                 return context[key]
-        # search in builtvars
-        if key in self._builtvars:
-            return self._builtvars[key]
         raise KeyError(key)
-
-    def setvar(self, vid, val):
-        if vid and vid[0] == "_":
-            raise EnvBadSymbolName(self, vid)
-        self._set_in_context(self._get_context(vid), vid, val)
-
-    def setfunc(self, fid, fdef):
-        if fid and fid[0] == "_":
-            raise EnvBadSymbolName(self, fid)
-        self._set_in_context(self._get_context(fid), fid, fdef)
-
-    def getfunc(self, fid):
-        try:
-            f = self._get_from_contexts(fid)
-        except KeyError:
-            raise EnvFuncNotFound(self, fid)
-        if not isinstance(f, pesci.code.PesciFunction):
-            raise EnvFuncNotFound(self, fid)
-        return f
 
     """push a value into the call stack"""
     def push(self, val):
@@ -138,12 +114,6 @@ class ExecutionEnvironment:
                 if key[0] != "_":
                     ctx[key] = val
         return ctx
-
-    def set_builtins(self, d):
-        self._builtins = d
-
-    def get_builtin(self, f):
-        return self._builtins[f]
 
     def add_global(self, name):
         gls = self.get_current_context()['__globals__']

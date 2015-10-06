@@ -21,5 +21,5 @@
 
 from validator import Validator
 from environment import ExecutionEnvironment
-from code import PesciCode
+from code import PesciCode, pesci_function
 from interpreter import Interpreter

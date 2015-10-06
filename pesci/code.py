@@ -24,6 +24,13 @@ import re
 from pesci.errors import *
 from pesci import Validator
 
+# Used to denote our builtin functions, expecting interpreter + environment args
+PESCI_BUILTIN_FUNCTION = "__pesci_builtinfun"
+# The actual decorator to use
+def pesci_function(func):
+    setattr(func, PESCI_BUILTIN_FUNCTION, True)
+    return func
+
 class PesciFunction:
     def __init__(self, name, params, body):
         self.name = name

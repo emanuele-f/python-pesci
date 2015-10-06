@@ -237,15 +237,6 @@ class Interpreter(object):
         # TODO blablabla
         assert 0, "UNKNOWN BIN OP! %s" % (op)
 
-    def _perform_bool_op(self, op, values):
-        if isinstance(op, ast.Or):
-            return operator.truth(reduce(operator_logical_or, values, 0))
-        if isinstance(op, ast.And):
-            return operator.truth(reduce(operator_logical_and, values, 1))
-        else:
-            # TODO blablabla
-            assert 0, "UNKNOWN BOOL OP! %s" % (op)
-
     def _perform_unary(self, op, operand):
         if isinstance(op, ast.Not):
             return not operand
@@ -343,17 +334,24 @@ class Interpreter(object):
         yield node
 
     def _statement_boolop(self, env, node):
+        # left to right evaluation
         op = node.op
-        args = []
-        for val in node.values:
-            itr = self._fold_expr(env, val)
+
+        for i in range(len(node.values)):
+            # get (i)th value
+            itr = self._fold_expr(env, node.values[i])
             while itr:
                 try: yield next(itr)
                 except StopIteration: break
+            left = env.pop()
 
-            args.append(env.pop())
+            # exit as soon as you can
+            if isinstance(op, ast.Or) and left:
+                break
+            elif isinstance(op, ast.And) and not left:
+                break
 
-        env.push(self._perform_bool_op(op, args))
+        env.push(left)
         yield node
 
     def _statement_unaryop(self, env, node):
@@ -386,7 +384,6 @@ class Interpreter(object):
         left = env.pop()
         comparators.insert(0, left)
 
-        # let's say it's just one op -> 1 yield
         env.push(operator.truth(reduce(operator.and_,
             [self._perform_comparison(comparators[i],
                 node.ops[i],

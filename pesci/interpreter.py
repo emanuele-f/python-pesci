@@ -186,6 +186,7 @@ class Interpreter(object):
             ast.Attribute: self._statement_attribute,
             ast.Global: self._statement_global,
             ast.While: self._statement_while,
+            ast.For: self._statement_for,
         }
 
         # search between complex ops
@@ -628,7 +629,7 @@ class Interpreter(object):
         item = env.pop()
 
         if node.attr[0] == "_":
-            raise RuntimeError("invalid attribute '%s'" % node.attr)
+            raise InterpretError("invalid attribute '%s'" % node.attr)
         env.push(getattr(item, node.attr))
         yield node
 
@@ -656,6 +657,47 @@ class Interpreter(object):
 
             # run the selected body
             for istr in torun:
+                itr = self._fold_expr(env, istr)
+                while itr:
+                    try: yield next(itr)
+                    except StopIteration: break
+        yield node
+
+    def _statement_for(self, env, node):
+        # get the iterator
+        itr = self._fold_expr(env, node.iter)
+        while itr:
+            try: yield next(itr)
+            except StopIteration: break
+        sequence = env.pop()
+
+        # get the left side variables
+        if isinstance(node.target, ast.Name):
+            targets = [node.target.id,]
+        elif isinstance(node.target, ast.Tuple):
+            targets = [item.id for item in node.target.elts]
+        else:
+            raise InterpretError("bad left argument '%s'" % node.target)
+        lt = len(targets)
+
+        # run the loop
+        for it in sequence:
+            # assign the variables
+            if lt == 1:
+                env.setvar(targets[0], it)
+            else:
+                for i in range(lt):
+                    env.setvar(targets[i], it[i])
+
+            # run the body
+            for istr in node.body:
+                itr = self._fold_expr(env, istr)
+                while itr:
+                    try: yield next(itr)
+                    except StopIteration: break
+        else:
+            # run orelse
+            for istr in node.orelse:
                 itr = self._fold_expr(env, istr)
                 while itr:
                     try: yield next(itr)

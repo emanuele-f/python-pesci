@@ -15,10 +15,11 @@ semantics to create an interpreter.
 
 Supported (scripting):
   - Strings, Lists, Tuples, Dicts
+  - If, While, For loops
   - Fuction definitions and calls
   - Some builtin functions
   - Objects attribute access and methods calls
-  
+
 Not supported:
   - Class definitions
   - Function decorators
@@ -28,9 +29,6 @@ Not supported:
   - Thread stuff
   - With statements
   - ...
-  
-Planned support:
-  - If, While, For loops
 
 The virtual environments
 ------------------------

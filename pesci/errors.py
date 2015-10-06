@@ -31,7 +31,7 @@ class SyntaxError(Exception):
             self.column,
             self.node.__class__.__name__ )
 
-class RuntimeError(Exception):
+class InterpretError(Exception):
     def __init__(self, cause):
         self.cause = cause
 

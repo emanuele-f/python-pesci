@@ -23,13 +23,21 @@ import sys
 from pesci import *
 
 @pesci_function
-def show_help(**kargs):
+def pesci_help(**kargs):
     interpreter = kargs[PESCI_KEY_INTERPRETER]
     env = kargs[PESCI_KEY_ENV]
-    interpreter.print_line("No help available. You are alone.")
+
+    interpreter.print_line("No help available. Try with 'dir()'.")
+
+@pesci_function
+def pesci_dir(**kargs):
+    interpreter = kargs[PESCI_KEY_INTERPRETER]
+    env = kargs[PESCI_KEY_ENV]
+    interpreter.print_line(env.get_description())
 
 preloaded_symbols = {
-    'help' : show_help,
+    'help' : pesci_help,
+    'dir' : pesci_dir
 }
 
 if __name__ == "__main__":

@@ -203,7 +203,7 @@ class Interpreter(object):
             env.push(v)
 
     def _base_value(self, env, node):
-        if isinstance(node, (int, long, float, str, bool, list, tuple)):
+        if isinstance(node, (int, long, float, str, bool, list, tuple)) or node is None:
             return node
         elif isinstance(node, ast.Num):
             return node.n
@@ -213,8 +213,6 @@ class Interpreter(object):
             return node
         elif isinstance(node, ast.Name):
             return env.get_symbol(node.id)
-        elif isinstance(node, ast.None):
-            return None
         elif isinstance(node, ast.Pass):
             pass
         else:

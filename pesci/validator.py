@@ -38,7 +38,7 @@ PESCI_SUBSET = (
     ast.slice, ast.Dict, ast.Tuple, ast.List, ast.ListComp, ast.DictComp, ast.Call,
 
     #-- Expression stuff
-    ast.Load, ast.AugLoad, ast.AugStore, ast.Store, ast.Param, ast.Name,
+    ast.Load, ast.AugLoad, ast.AugStore, ast.Store, ast.Param, ast.Name, ast.Subscript,
 
     #-- Other stuff
     ast.Print, ast.Global, ast.Pass, ast.Break, ast.Continue, ast.Num,

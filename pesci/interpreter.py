@@ -189,6 +189,7 @@ class Interpreter(object):
             ast.Global: self._statement_global,
             ast.While: self._statement_while,
             ast.For: self._statement_for,
+            ast.Subscript: self._statement_subscript,
         }
 
         # search between complex ops
@@ -707,3 +708,42 @@ class Interpreter(object):
                     try: yield next(itr)
                     except StopIteration: break
         yield node
+
+    def _statement_subscript(self, env, node):
+        # get the variable
+        itr = self._fold_expr(env, node.value)
+        while itr:
+            try: yield next(itr)
+            except StopIteration: break
+        var = env.pop()
+        sl = node.slice
+
+        # get slice type
+        if hasattr(sl, "value"):
+            # single index
+            itr = self._fold_expr(env, sl.value)
+            while itr:
+                try: yield next(itr)
+                except StopIteration: break
+            val = env.pop()
+            env.push(var[val])
+        else:
+            # multiple indexes
+            itr = self._fold_expr(env, sl.lower)
+            while itr:
+                try: yield next(itr)
+                except StopIteration: break
+            lower = env.pop()
+
+            itr = self._fold_expr(env, sl.upper)
+            while itr:
+                try: yield next(itr)
+                except StopIteration: break
+            upper = env.pop()
+
+            itr = self._fold_expr(env, sl.step)
+            while itr:
+                try: yield next(itr)
+                except StopIteration: break
+            step = env.pop()
+            env.push(var[lower:upper:step])

@@ -101,6 +101,11 @@ class ExecutionEnvironment:
     def pop(self):
         return self._stack.pop()
 
+    def popall(self):
+        s = self._stack
+        self._stack = []
+        return s
+
     """context: additional names pool"""
     def push_context(self):
         # a trick to remember global variables

@@ -87,6 +87,7 @@ class Interpreter(object):
                 val = env.pop()
                 if self._interactive:
                     self.i_print(val)
+                env.popall()
             except IndexError:
                 pass
 
@@ -184,6 +185,7 @@ class Interpreter(object):
             ast.List: self._statement_list,
             ast.Attribute: self._statement_attribute,
             ast.Global: self._statement_global,
+            ast.While: self._statement_while,
         }
 
         # search between complex ops
@@ -627,4 +629,29 @@ class Interpreter(object):
     def _statement_global(self, env, node):
         for name in node.names:
             env.add_global(name)
+        yield node
+
+    def _statement_while(self, env, node):
+        running = True
+
+        while running:
+            # get the condition
+            itr = self._fold_expr(env, node.test)
+            while itr:
+                try: yield next(itr)
+                except StopIteration: break
+            cond = env.pop()
+
+            if cond == True:
+                torun = node.body
+            else:
+                torun = node.orelse
+                running = False
+
+            # run the selected body
+            for istr in torun:
+                itr = self._fold_expr(env, istr)
+                while itr:
+                    try: yield next(itr)
+                    except StopIteration: break
         yield node

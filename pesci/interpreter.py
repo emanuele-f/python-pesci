@@ -49,6 +49,9 @@ var = env.pop()
 is used to "wait" until sub-folded functions end their execution.
 """
 
+operator_logical_or = lambda a,b: a or b
+operator_logical_and = lambda a,b: a and b
+
 # builtin functions
 BUILTINS = {'len':len, 'abs':abs, 'all':all, 'any':any, 'bin':bin, 'bool':bool,
  'cmp':cmp, 'complex':complex, 'dict':dict, 'enumerate':enumerate, 'filter':filter,
@@ -162,43 +165,39 @@ class Interpreter(object):
         print s
 
     def _fold_expr(self, env, node):
-        # fold ones, may return iterators
-        if isinstance(node, ast.BinOp):
-            return self._statement_binop(env, node)
-        elif isinstance(node, ast.BoolOp):
-            return self._statement_boolop(env, node)
-        elif isinstance(node, ast.UnaryOp):
-            return self._statement_unaryop(env, node)
-        elif isinstance(node, ast.Compare):
-            return self._statement_compare(env, node)
-        elif isinstance(node, ast.Assign):
-            return self._statement_assign(env, node)
-        elif isinstance(node, ast.AugAssign):
-            return self._statement_augassign(env, node)
-        elif isinstance(node, ast.Print):
-            return self._statement_print(env, node)
-        elif isinstance(node, ast.If):
-            return self._statement_if(env, node)
-        elif isinstance(node, ast.Expr):
-            return self._statement_expr(env, node)
-        elif isinstance(node, ast.FunctionDef):
-            return self._statement_funcdef(env, node)
-        elif isinstance(node, ast.Call):
-            return self._statement_funcall(env, node)
-        elif isinstance(node, ast.Return):
-            return self._statement_return(env, node)
-        elif isinstance(node, ast.Dict):
-            return self._statement_dict(env, node)
-        elif isinstance(node, ast.Tuple):
-            return self._statement_tuple(env, node)
-        elif isinstance(node, ast.List):
-            return self._statement_list(env, node)
-        elif isinstance(node, ast.Attribute):
-            return self._statement_attribute(env, node)
-        elif isinstance(node, ast.Global):
-            return self._statement_global(env, node)
+        # Symbol mapping to function
+        op2fnmap = {
+            ast.BinOp: self._statement_binop,
+            ast.BoolOp: self._statement_boolop,
+            ast.UnaryOp: self._statement_unaryop,
+            ast.Compare: self._statement_compare,
+            ast.Assign: self._statement_assign,
+            ast.AugAssign: self._statement_augassign,
+            ast.Print: self._statement_print,
+            ast.If: self._statement_if,
+            ast.Expr: self._statement_expr,
+            ast.FunctionDef: self._statement_funcdef,
+            ast.Call: self._statement_funcall,
+            ast.Return: self._statement_return,
+            ast.Dict: self._statement_dict,
+            ast.Tuple: self._statement_tuple,
+            ast.List: self._statement_list,
+            ast.Attribute: self._statement_attribute,
+            ast.Global: self._statement_global,
+        }
+
+        # search between complex ops
+        f = None
+        for k,v in op2fnmap.items():
+            if isinstance(node, k):
+                f = v
+                break
+
+        if f:
+            # return a Generator or None
+            return f(env, node)
         else:
-            # try with a base value
+            # try with a base value: no generators!
             v = self._base_value(env, node)
             env.push(v)
 
@@ -230,9 +229,6 @@ class Interpreter(object):
         assert 0, "UNKNOWN BIN OP! %s" % (op)
 
     def _perform_bool_op(self, op, values):
-        operator_logical_or = lambda a,b: a or b
-        operator_logical_and = lambda a,b: a and b
-
         if isinstance(op, ast.Or):
             return operator.truth(reduce(operator_logical_or, values, 0))
         if isinstance(op, ast.And):

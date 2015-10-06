@@ -41,6 +41,30 @@ python system modules and bultins. Moreover, access to "underscore" names
 is denied. It is also possible to inject own objects and functions during
 the environment setup phase.
 
+The *@pesci_function* decorator can be applied to a function to cause the
+framework to pass the special keyword arguments:
+- *PESCI_KEY_INTERPRETER*: the interpreter which is executing the code
+- *PESCI_KEY_ENV*: the execution environment
+
+Example:
+
+```python
+@pesci_function
+def show_help(**kargs):
+    interpreter = kargs[PESCI_KEY_INTERPRETER]
+    env = kargs[PESCI_KEY_ENV]
+
+    interpreter.print_line("No help available. You are alone.")
+```
+
+This function (or any other symbol) can then be exposed to the environment
+during its preload:
+
+```python
+interpreter = Interpreter()
+interpreter.create_create_env(symbols={'help':show_help})
+```
+
 In this way, you can wrap your objects into a python interface, load it into
 a controlled python environment, and allow the user to use PesceCode as a
 scripting language without allowing direct execution of python code...worderfull!

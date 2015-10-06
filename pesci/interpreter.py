@@ -369,9 +369,15 @@ class Interpreter(object):
             while itr:
                 try: yield next(itr)
                 except StopIteration: break
-
             comparators.append(env.pop())
-        comparators.insert(0, env.getvar(node.left.id))
+
+        # get the left side
+        itr = self._fold_expr(env, node.left)
+        while itr:
+                try: yield next(itr)
+                except StopIteration: break
+        left = env.pop()
+        comparators.insert(0, left)
 
         # let's say it's just one op -> 1 yield
         env.push(operator.truth(reduce(operator.and_,

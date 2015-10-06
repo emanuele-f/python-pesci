@@ -61,7 +61,7 @@ class Validator(object):
                 offset = node.col_offset
 
             if not self._is_valid_node(node):
-                raise PeterSyntaxError(node, line, offset)
+                raise PesciSyntaxError(node, line, offset)
 
             self._visit_ast_tree(node, line, offset, level+1)
 

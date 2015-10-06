@@ -86,7 +86,7 @@ class PesciCode:
             parsed = ast.parse(self._code, mode='exec')
             self._validator.validate(parsed)
             return parsed
-        except SyntaxError as error:
+        except PesciSyntaxError as error:
             # TODO exc handle
             raise
             #~ print "Error:", error

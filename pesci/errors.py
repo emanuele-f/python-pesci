@@ -19,7 +19,7 @@
 #  MA 02110-1301, USA.
 #
 
-class SyntaxError(Exception):
+class PesciSyntaxError(Exception):
     def __init__(self, node, line, column):
         self.node = node
         self.line = line

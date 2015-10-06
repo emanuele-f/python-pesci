@@ -122,11 +122,11 @@ class Interpreter(object):
         print "Pesci 0.1 over Python %s" % sys.version.split(" ")[0]
         print "Emanuele Faranda <black.silver@hotmail.it>"
         print "Type 'exit' to end interactive mode\n"
-        notexit = True
+
         self._interactive = True
         partial = ""
 
-        while notexit:
+        while self._interactive:
             try:
                 if partial:
                     prompt = "... "
@@ -134,9 +134,9 @@ class Interpreter(object):
                     prompt = ">>> "
                 cmd = raw_input(prompt)
             except EOFError:
-                notexit = False
+                self._interactive = False
             except KeyboardInterrupt as kint:
-                print "KeyboardInterrupt"
+                print kint
                 partial = ""
             else:
                 # handle continuation lines
@@ -152,7 +152,7 @@ class Interpreter(object):
                         partial += cmd + "\n"
 
                 if cmd == "exit":
-                    notexit = False
+                    self._interactive = False
                 elif not partial:
                     # evaluate command
                     try:
@@ -161,6 +161,9 @@ class Interpreter(object):
                         self.run(env)
                     except Exception as e:
                         traceback.print_exc(file=sys.stdout)
+
+    """exits interactive mode"""
+    def stop(self):
         self._interactive = False
 
     """Respond to a print instruction"""

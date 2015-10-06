@@ -27,7 +27,7 @@ import operator
 import pesci.code
 import readline                 # enables line editing features
 from pesci.errors import *
-from pesci.code import PesciCode, PesciFunction, PESCI_BUILTIN_FUNCTION
+from pesci.code import *
 from pesci import ExecutionEnvironment
 
 """
@@ -494,8 +494,8 @@ class Interpreter(object):
                 pass
             else:
                 # it's a decorated function, we pass interpreter and env
-                allargs.insert(0, self)
-                allargs.insert(1, env)
+                kwargs[PESCI_KEY_INTERPRETER] = self
+                kwargs[PESCI_KEY_ENV] = env
             env.push(f(*allargs, **kwargs))
             yield
             return

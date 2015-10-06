@@ -23,7 +23,9 @@ import sys
 from pesci import *
 
 @pesci_function
-def show_help(interpreter, env):
+def show_help(**kargs):
+    interpreter = kargs[PESCI_KEY_INTERPRETER]
+    env = kargs[PESCI_KEY_ENV]
     interpreter.print_line("No help available. You are alone.")
 
 preloaded_symbols = {

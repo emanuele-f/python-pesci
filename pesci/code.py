@@ -26,6 +26,8 @@ from pesci import Validator
 
 # Used to denote our builtin functions, expecting interpreter + environment args
 PESCI_BUILTIN_FUNCTION = "__pesci_builtinfun"
+PESCI_KEY_INTERPRETER = "__pesci_interpr"
+PESCI_KEY_ENV = "__pesci_environ"
 # The actual decorator to use
 def pesci_function(func):
     setattr(func, PESCI_BUILTIN_FUNCTION, True)
